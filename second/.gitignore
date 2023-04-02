@@ -1,2 +1,6 @@
 /examples
 /mine
+*.o
+parent
+child
+
