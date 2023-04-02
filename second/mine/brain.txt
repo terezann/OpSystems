@@ -1,0 +1,13 @@
+//parent
+
+δημιουργία n παιδιών ανάλογα με το argv[1] και με state 1(t) ή 0(f). 
+fork()
+τύπωσε δέντρο διεργασιών για να φαίνονται τα pid των παιδιών: 
+    [PARENT/PID=100] Created child 0 (PID=101) and initial state 'f'
+άρα μέσα στο pid == 0: //child
+    printf("[PARENT/PID=getppid] Created child i (PID=getpid) and initial state 'char'")
+    όπου i το i-οστό στοιχείο του πίνακα που αποθηκεύω τα pid των παιδιών κατά τη δημιουργία τους
+    και char το αντίστοιχο i-οστό γράμμα t ή f που διαβάζω από το prompt.
+
+    **Έλεγχοι για fork σύμφωνα με άσκηση 1.
+
