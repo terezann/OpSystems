@@ -51,7 +51,7 @@ pid_t make_child(char cc, int no) {
         if (kiddo == 0) { //child process
 
             printf("[PARENT/PID=%d] Created child %d (PID=%d) and initial state '%c'\n", getppid(), no, getpid(), cc); /* child, load "./child" executable */ 
-            char *const argv[] = {"./child", "Hello", NULL};
+            char *const argv[] = {"./child", &cc, NULL};
             int status = execv("./child", argv);
         }
 
@@ -69,7 +69,7 @@ pid_t remake_child(char cc, int no) {
             if (cc == 'f') g = 0;
             printf("[PARENT/PID=%d] Created new child for gate %d (PID=%d) and initial state '%c'\n", getppid(), g, getpid(), cc); 
             /* child, load "./child" executable */ 
-            char *const argv[] = {"./child", "Hello", NULL};
+            char *const argv[] = {"./child", &cc, NULL};
             int status = execv("./child", argv);
         }
 
@@ -154,14 +154,13 @@ int main (int argc, char *argv[]) {
 
     while (rc_pid != -1) {
         int chld_state;
-        rc_pid = waitpid(-1, &chld_state, WNOHANG);
+        rc_pid = waitpid(-1, &chld_state, WNOHANG | WUNTRACED);
         if (rc_pid == 0) continue;
         if (rc_pid == -1) {
             perror("waitpid");
             exit(EXIT_FAILURE);
         }
         if (WIFEXITED(chld_state) || WIFSIGNALED(chld_state)) {
-            printf("a\n");
             for (int i = 0; i < strlen(c); i++) {
                 if (rc_pid == pid_array[i]) {
                     describe_wait_status(rc_pid, chld_state);
@@ -169,12 +168,13 @@ int main (int argc, char *argv[]) {
                 }
             }
         }
-        if (WIFSTOPPED(chld_state)) { //an kapoio paidi exei stamathsei -> continue 
-            for (int i = 0; i < strlen(c); i++) {
-                if (rc_pid == pid_array[i]) {
-                    kill(pid_array[i], SIGCONT);
-                }
-            }
+
+        // rc_pid = waitpid(-1, &chld_state, WUNTRACED);
+        // describe_wait_status(rc_pid, chld_state);
+        // if (rc_pid == 0) continue;
+        if (WIFSTOPPED(chld_state)) { 
+            describe_wait_status(rc_pid, chld_state);
+            kill(rc_pid, SIGCONT);
         }
     }
 

@@ -5,10 +5,12 @@
 #include <time.h>
 
 int GATE;
+char *G = "t";
 int t = 0;
 
 void handle_sigterm(int sig) {
-    print
+    printf("child exited successfully yadayada\n");
+    exit(EXIT_SUCCESS);
 }
 
 void handle_sigusr1(int sig) {
@@ -31,11 +33,19 @@ void handle_sigalrm(int sig) {
         printf("[GATE=%d/PID=%d/TIME=%ds] The gates are open!\n", GATE, getpid(), t);
     }
     alarm(5);
+
+    while (sig != -1) {
+        pause();
+    }
 }
 
 int main(int argc, char **argv) {
 
-    printf("argv[1]=%d\n", *argv[1]);
+    if (*argv[1] == *G){ 
+        GATE = 1;
+    } else { 
+        GATE = 0;
+    }
 
     struct sigaction sa1 = {0};
     struct sigaction sa2 = {0};
@@ -44,19 +54,24 @@ int main(int argc, char **argv) {
     sa1.sa_handler = &handle_sigusr1;
     sa2.sa_handler = &handle_sigusr2;
     sal.sa_handler = &handle_sigalrm;
+
+    sigemptyset(&sal.sa_mask);
+    sal.sa_flags = SA_NODEFER;
     
     sa1.sa_flags = SA_RESTART;
     sa2.sa_flags = SA_RESTART;
-    sal.sa_flags = SA_RESTART;
 
     sigaction(SIGUSR1, &sa1, NULL);
     sigaction(SIGUSR2, &sa2, NULL);
     sigaction(SIGALRM, &sal, NULL);
 
     alarm(5);
-    while (1) {
-        printf("inside the while loop\n");
-        pause();
-    }
+    pause();
+
+    // while (1) {
+    //     printf("inside the while loop\n");
+    //     pause();
+    // }
+
     return 0;
 }
