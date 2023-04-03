@@ -27,8 +27,10 @@ void handle_sigusr2(int sig) {
 void handle_sigterm(int sig) {
     printf("Parent: HAVE TO KILL 'EM ALL\n");
     for (int i = 0; i < strlen(c); i++) {
+        printf("Waiting for %ld children to exit\n", (strlen(c)-i));
         kill(pid_array[i], SIGTERM);
     }
+    exit(EXIT_SUCCESS);
 }
 
 
@@ -153,13 +155,13 @@ int main (int argc, char *argv[]) {
     while (rc_pid != -1) {
         int chld_state;
         rc_pid = waitpid(-1, &chld_state, WNOHANG);
+        if (rc_pid == 0) continue;
         if (rc_pid == -1) {
             perror("waitpid");
             exit(EXIT_FAILURE);
         }
         if (WIFEXITED(chld_state) || WIFSIGNALED(chld_state)) {
             printf("a\n");
-            sleep(3);
             for (int i = 0; i < strlen(c); i++) {
                 if (rc_pid == pid_array[i]) {
                     describe_wait_status(rc_pid, chld_state);
