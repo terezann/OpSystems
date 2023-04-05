@@ -49,9 +49,10 @@ pid_t make_child(char cc, int no) {
         if (!healthy_child(kiddo, "Child failed\n")) exit(EXIT_FAILURE);
 
         if (kiddo == 0) { //child process
-
+            char num[50];
+            snprintf(num, sizeof(num), "%d", no);
             printf("[PARENT/PID=%d] Created child %d (PID=%d) and initial state '%c'\n", getppid(), no, getpid(), cc); /* child, load "./child" executable */ 
-            char *const argv[] = {"./child", &cc, NULL};
+            char *const argv[] = {"./child", &cc, num, NULL};
             int status = execv("./child", argv);
         }
 
@@ -65,18 +66,33 @@ pid_t remake_child(char cc, int no) {
         if (!healthy_child(kiddo, "Child failed\n")) exit(EXIT_FAILURE);
 
         if (kiddo == 0) { //child process
-            if (cc == 't') g = 1;
-            if (cc == 'f') g = 0;
-            printf("[PARENT/PID=%d] Created new child for gate %d (PID=%d) and initial state '%c'\n", getppid(), g, getpid(), cc); 
+            char num[50];
+            snprintf(num, sizeof(num), "%d", no);
+            printf("[PARENT/PID=%d] Created new child for gate %s (PID=%d) and initial state '%c'\n", getppid(), num, getpid(), cc); 
             /* child, load "./child" executable */ 
-            char *const argv[] = {"./child", &cc, NULL};
+            char *const argv[] = {"./child", &cc, num, NULL};
             int status = execv("./child", argv);
         }
 
         return kiddo;
 }
 
-
+void handle_sigchld(int sig) {
+    int status;
+    rc_pid = waitpid(-1, &status, WNOHANG | WUNTRACED);
+    if (WIFEXITED(status) || WIFSIGNALED(status)) {
+        for (int i = 0; i < strlen(c); i++) {
+            if ( pid_array[i] == rc_pid ) {
+                printf("I'm procreating after sigchld handling, so cool wow\n");
+                remake_child(c[i], i);
+            }
+        }
+    }
+    if (WIFSTOPPED(status)) {
+        printf("I'm receiving sigchld and I know that one of my children has been stopped.\n");
+        kill(rc_pid, SIGCONT);
+    }
+}
 
 void describe_wait_status(pid_t pid, int status) {
     if (pid < 1) {
@@ -105,7 +121,6 @@ void describe_wait_status(pid_t pid, int status) {
 
 
 
-
 int main (int argc, char *argv[]) {
     
     if (argc != 2) {
@@ -129,53 +144,61 @@ int main (int argc, char *argv[]) {
     struct sigaction sat = {0};
     struct sigaction sa1 = {0};
     struct sigaction sa2 = {0};
+    struct sigaction sac = {0};
 
     sat.sa_handler = &handle_sigterm;
     sa1.sa_handler = &handle_sigusr1;
     sa2.sa_handler = &handle_sigusr2;
+    sac.sa_handler = &handle_sigchld;
     
-    sat.sa_flags = SA_RESTART;
-    sa1.sa_flags = SA_RESTART;
-    sa2.sa_flags = SA_RESTART;
+    // sat.sa_flags = SA_RESTART;
+    // sa1.sa_flags = SA_RESTART;
+    // sa2.sa_flags = SA_RESTART;
 
-    sigaction(SIGTERM, &sat, NULL);
+    sigemptyset(&sa1.sa_mask);
+    sa1.sa_flags = SA_NODEFER;
+
+    sigemptyset(&sa2.sa_mask);
+    sa2.sa_flags = SA_NODEFER;
+
+    sigemptyset(&sac.sa_mask);
+    sac.sa_flags = SA_NODEFER;
+
+    int a = sigaction(SIGTERM, &sat, NULL);
     sigaction(SIGUSR1, &sa1, NULL);
     sigaction(SIGUSR2, &sa2, NULL);
+    sigaction(SIGCHLD, &sac, NULL);
 
-    // while (1) {
-    //     printf("a\n");
-    //     int status;
-    //     pid_t pid = wait(&status);
-    //     for (int i = 0; i < strlen(c); i++) {
-    //         describe_wait_status(pid_array[i], status);
-    //         sleep(2);
+
+    // -------CODE WO HANDLING THE SIGCHLD------------
+    // to run, comment out the sigchld handler.
+    //
+    // while (rc_pid != -1) {
+    //     int chld_state;
+    //     rc_pid = waitpid(-1, &chld_state, WNOHANG | WUNTRACED);
+    //     if (rc_pid == 0) continue;
+    //     if (rc_pid == -1) {
+    //         perror("waitpid");
+    //         exit(EXIT_FAILURE);
+    //     }
+    //     if (WIFEXITED(chld_state) || WIFSIGNALED(chld_state)) {
+    //         for (int i = 0; i < strlen(c); i++) {
+    //             if (rc_pid == pid_array[i]) {
+    //                 describe_wait_status(rc_pid, chld_state);
+    //                 pid_array[i] = remake_child(c[i], i);
+    //             }
+    //         }
+    //     }
+    //     if (WIFSTOPPED(chld_state)) { 
+    //         describe_wait_status(rc_pid, chld_state);
+    //         kill(rc_pid, SIGCONT);
     //     }
     // }
-
-    while (rc_pid != -1) {
-        int chld_state;
-        rc_pid = waitpid(-1, &chld_state, WNOHANG | WUNTRACED);
-        if (rc_pid == 0) continue;
-        if (rc_pid == -1) {
-            perror("waitpid");
-            exit(EXIT_FAILURE);
-        }
-        if (WIFEXITED(chld_state) || WIFSIGNALED(chld_state)) {
-            for (int i = 0; i < strlen(c); i++) {
-                if (rc_pid == pid_array[i]) {
-                    describe_wait_status(rc_pid, chld_state);
-                    pid_array[i] = remake_child(c[i], i);
-                }
-            }
-        }
-
-        // rc_pid = waitpid(-1, &chld_state, WUNTRACED);
-        // describe_wait_status(rc_pid, chld_state);
-        // if (rc_pid == 0) continue;
-        if (WIFSTOPPED(chld_state)) { 
-            describe_wait_status(rc_pid, chld_state);
-            kill(rc_pid, SIGCONT);
-        }
+    
+    //---------CODE W HANDLING THE SIGCHLD------------
+    while( a != -1) {
+        printf("I'm alive and waiting for a signal.\n");
+        pause();
     }
 
     return 0;
