@@ -79,7 +79,7 @@ pid_t remake_child(char cc, int no) {
 
 void handle_sigchld(int sig) {
     int status;
-    rc_pid = waitpid(-1, &status, WNOHANG | WUNTRACED);
+    rc_pid = waitpid(-1, &status, WNOHANG | WUNTRACED); 
     if (WIFEXITED(status) || WIFSIGNALED(status)) {
         for (int i = 0; i < strlen(c); i++) {
             if ( pid_array[i] == rc_pid ) {
@@ -121,7 +121,7 @@ void describe_wait_status(pid_t pid, int status) {
 
 
 
-int main (int argc, char *argv[]) {
+int main (int argc, char *argv[]) { 
     
     if (argc != 2) {
         printf("Usage: ./a.out children\n");
@@ -196,7 +196,7 @@ int main (int argc, char *argv[]) {
     // }
     
     //---------CODE W HANDLING THE SIGCHLD------------
-    while( a != -1) {
+    while( a != -1 ) {
         printf("I'm alive and waiting for a signal.\n");
         pause();
     }
