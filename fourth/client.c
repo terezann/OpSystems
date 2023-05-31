@@ -7,89 +7,248 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 
-char *HOST;
-char* serverHostname = "iot.dslab.pub.ds.open-cloud.xyz";
 int PORT = 18080;
+int flag = 0;
 int DEBUG = 0;
+char *HOST = "iot.dslab.pub.ds.open-cloud.xyz";
+
+void removeSubstring(char *str, const char *sub) {
+    size_t len = strlen(sub);
+    char *p = str;
+    
+    while ((p = strstr(p, sub)) != NULL) {
+        memmove(p, p + len, strlen(p + len) + 1);
+    }
+}
 
 int main(int argc, char **argv) { 
+
     if (argc > 6) { 
         printf("argc is larger than 4\n");
         exit(1);
     }
 
     if (argc == 6) { 
-        if (strcmp(argv[1], "--host")){ 
-            printf("Argv[1] is incorrect\n");
-            exit(1);
+
+        int count = 0;
+
+        for (int i = 0; i < argc; i++) { 
+            if (!strcmp(argv[i], "--host")){ 
+                if (i < argc - 1) {
+                    if (strncmp(argv[i+1], "--port", 6) && strncmp(argv[i+1], "--debug", 6)){ 
+                        HOST = argv[i+1];
+                        count++;
+                    }
+                    else { 
+                        printf("wrong args\n");
+                        exit(1);
+                    }
+                }
+                else { 
+                    printf("wrong args\n");
+                    exit(1);
+                }
+            }
+
+            if (!strcmp(argv[i], "--port")){ 
+                if (i < argc - 1) {
+                    if (strncmp(argv[i+1], "--host", 6) && strncmp(argv[i+1], "--debug", 6)){ 
+                        PORT = atoi(argv[i+1]);
+                        count++;
+                    }
+                    else { 
+                        printf("wrong args\n");
+                        exit(1);
+                    }
+                }
+                else { 
+                    printf("wrong args\n");
+                    exit(1);
+                }
+            }
+
+            if (!strcmp(argv[i], "--debug")){ 
+                DEBUG = 1;
+                count++;
+            }
         }
 
-        if (strcmp(argv[3], "--port")){ 
-            printf("Argv[3] is incorrect\n");
+        if (count != 3) { 
+            printf("wrong args\n");
             exit(1);
         }
-
-        if (strcmp(argv[5], "--debug")){ 
-            printf("Argv[5] is incorrect\n");
-            exit(1);
-        }
-
-        HOST = argv[2];
-        PORT = atoi(argv[4]);
-        DEBUG = 1;
     }
 
     if (argc == 5) { 
-        if (strcmp(argv[1], "--host")){ 
-            printf("Argv[1] is incorrect\n");
+        int count = 0;
+
+        for (int i = 0; i < argc; i++) { 
+            if (!strcmp(argv[i], "--host")){ 
+                if (i < argc - 1) {
+                    if (strncmp(argv[i+1], "--port", 6) && strncmp(argv[i+1], "--debug", 6)){ 
+                        HOST = argv[i+1];
+                        count++;
+                    }
+                    else { 
+                        printf("wrong args\n");
+                        exit(1);
+                    }
+                }
+                else { 
+                    printf("wrong args\n");
+                    exit(1);
+
+                }
+            }
+
+            if (!strcmp(argv[i], "--port")){ 
+                if (i < argc - 1) {
+                    if (strncmp(argv[i+1], "--host", 6) && strncmp(argv[i+1], "--debug", 6)){ 
+                        PORT = atoi(argv[i+1]);
+                        count++;
+                    }
+                    else { 
+                        printf("wrong args\n");
+                        exit(1);
+                    }
+                }
+                else { 
+                    printf("wrong args\n");
+                    exit(1);
+                }
+            }
+        }
+
+        if (count != 2) { 
+            printf("wrong args\n");
             exit(1);
         }
 
-        if (strcmp(argv[3], "--port")){ 
-            printf("Argv[3] is incorrect\n");
-            exit(1);
-        }
 
-        HOST = argv[2];
-        PORT = atoi(argv[4]);
     }
 
     if (argc == 4) { 
-        if (strcmp(argv[1], "--host")){ 
-            printf("Argv[1] is incorrect\n");
-            exit(1);
+        int count = 0;
+        int arg_flag = 0;
+
+        for (int i = 0; i < argc; i++) { 
+            if (!strcmp(argv[i], "--host")){ 
+                if (i < argc - 1) {
+                    if (strncmp(argv[i+1], "--port", 6) && strncmp(argv[i+1], "--debug", 6)){ 
+                        if (arg_flag == 0) {
+                            HOST = argv[i+1];
+                            count++;
+                            arg_flag = 1;
+                        }
+                        else { 
+                            printf("wrong args\n");
+                            exit(1);
+                        }
+                    }
+                }
+            }
+
+            if (!strcmp(argv[i], "--port")){ 
+                if (i < argc - 1) {
+                    if (strncmp(argv[i+1], "--host", 6) && strncmp(argv[i+1], "--debug", 6)){ 
+                        if (arg_flag == 0) { 
+                            PORT = atoi(argv[i+1]);
+                            count++;
+                            arg_flag = 1;
+                        }
+                        else { 
+                            printf("wrong args\n");
+                            exit(1);
+                        }
+                    }
+                }
+            }
+
+            if (!strcmp(argv[i], "--debug")){ 
+                DEBUG = 1;
+                count++;
+            }
         }
 
-        if (strcmp(argv[3], "--port")){ 
-            printf("Argv[3] is incorrect\n");
+        if (count != 2) { 
+            printf("wrong args\n");
             exit(1);
         }
-
-        printf("you need to specify which PORT you want to connect to!\n");
-        exit(1);
     }
 
     if (argc == 3) { 
-        if (strcmp(argv[1], "--host")){ 
+        int count = 0;
+        int arg_flag = 0;
+
+        for (int i = 0; i < argc; i++) { 
+            if (!strcmp(argv[i], "--host")){ 
+                if (i < argc - 1) {
+                    if (strncmp(argv[i+1], "--port", 6) && strncmp(argv[i+1], "--debug", 6)){ 
+                        if (arg_flag == 0) {
+                            HOST = argv[i+1];
+                            count++;
+                            arg_flag = 1;
+                        }
+                        else { 
+                            printf("wrong args 1\n");
+                            exit(1);
+                        }
+                    }
+                    else { 
+                        printf("wrong args 2\n");
+                        exit(1);
+                    }
+                }
+                else { 
+                    printf("wrong args 3\n");
+                    exit(1);
+                }
+            }
+
+            if (!strcmp(argv[i], "--port")){ 
+                if (i < argc - 1) {
+                    if (strncmp(argv[i+1], "--host", 6) && strncmp(argv[i+1], "--debug", 6)){ 
+                        if (arg_flag == 0) { 
+                            PORT = atoi(argv[i+1]);
+                            count++;
+                            arg_flag = 1;
+                        }
+                        else { 
+                            printf("wrong args\n");
+                            exit(1);
+                        }
+                    }
+                    else { 
+                        printf("wrong args\n");
+                        exit(1);
+                    }
+                }
+                else { 
+                    printf("wrong args\n");
+                    exit(1);
+                }
+            }
+
+        }
+
+        if (count != 1) { 
+            printf("wrong args\n");
+            exit(1);
+        }
+    }
+
+    if (argc == 2) { 
+        if (strcmp(argv[1], "--debug")){ 
             printf("Argv[1] is incorrect\n");
             exit(1);
         }
 
-        HOST = argv[2];
+        DEBUG = 1;
+
     }
 
-    if (argc == 2) { 
-        if (strcmp(argv[1], "--host")){ 
-            printf("Argv[1] is incorrect\n"); exit(1);
-        }
-
-        printf("you need to specify which HOST you want to connect to!\n");
-        exit(1);
-    }
-
-    struct hostent *server_host = gethostbyname(serverHostname); //host info
+    struct hostent *server_host = gethostbyname(HOST);
     if (server_host == NULL) {
         perror("failed to resolve host name\n");
         exit(EXIT_FAILURE);
@@ -100,28 +259,19 @@ int main(int argc, char **argv) {
 
     network_socket = socket(AF_INET, SOCK_STREAM, 0);
 
+    if (network_socket < 0) { 
+        perror(0);
+        exit(1);
+    }
+
     struct sockaddr_in server_address;
     fd_set mask;
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(PORT);
+    server_address.sin_addr.s_addr = htonl(INADDR_ANY);
     memcpy(&server_address.sin_addr, server_host->h_addr, server_host->h_length);
 
-
-
-    // /* Get info on host */
-    // if ( (server_host=gethostbyaddr("iot.dslab.pub.ds.open-cloud.xyz", strlen("iot.dslab.pub.ds.open-cloud.xyz"),SOCK_STREAM)) == NULL ) {
-    //     fprintf(stderr, "%s: unknown host %s\n", argv[0], argv[1]);
-    //     exit(1);
-    // }
-
-    // if (inet_pton(AF_INET, serverHostname, &(server_address.sin_addr)) < 0) {
-    //     perror("Invalid address/Address not supported");
-    //     exit(EXIT_FAILURE);
-    // }
-
-    // bcopy((char*)server_host->h_addr, (char*)&server_address.sin_addr, server_host->h_length);
     int connection_status = connect(network_socket, (struct sockaddr *) &server_address, sizeof(server_address));
-    printf("aaa\n");
 
     if (connection_status < 0) { 
         perror(0);
@@ -129,7 +279,7 @@ int main(int argc, char **argv) {
     }
 
     while(1) { 
-        printf("lol\n"); 
+
         FD_ZERO(&mask);
 
         FD_SET(network_socket, &mask);
@@ -149,12 +299,17 @@ int main(int argc, char **argv) {
             exit(1);
         }
         char server_response[256];
-
         char buffer[101];
-        int n_read;
+
 
         if (FD_ISSET(STDIN_FILENO, &mask)){ 
-            n_read = read(STDIN_FILENO, buffer, 100);
+            int n_read = read(STDIN_FILENO, buffer, 100);
+
+            if (n_read < 0) { 
+                perror(0);
+                exit(1);
+            }
+
             buffer[n_read] = '\0';
 
             if (n_read > 0 && buffer[n_read-1] == '\n') {
@@ -165,63 +320,72 @@ int main(int argc, char **argv) {
                 printf("[DEBUG] sent %s\n", buffer);
             }
 
-            printf("Got user input: %s\n", buffer);
-
             if (n_read >= 4 && strncmp(buffer, "exit", 4) == 0) {
+                close(network_socket);
                 exit(0);
             }
 
             if (n_read >= 4 && strncmp(buffer, "help", 4) == 0) {
-                printf("This is a help message\n");
+              printf("Available commands:\n");
+              printf("'help', print this help message\n");
+              printf("'exit', exit\n");
+              printf("'get', retrieve sensor data\n");
+              printf("'N name surname reason', ask permission to go out\n");
+              continue;
             }
 
             if (n_read >= 3 && strncmp(buffer, "get", 3) == 0) {
-                write(network_socket, &buffer, sizeof(buffer));
-                // if (strlen(server_response) > 0){ 
-                //     if (DEBUG){
-                //         printf("read '%s'\n", server_response);
-                //     }
-                //
-                //     char *token = strtok(server_response, " ");
-                //     int values[4];
-                //     int i = 0;
-                //
-                //     while (token != NULL && i < 4) { 
-                //         values[i] = atoi(token);
-                //         token = strtok(NULL, " ");
-                //         i++;
-                //     }
-                //
-                //     int third_value = values[2];
-                //     int minutes = third_value / 100;
-                //     int seconds = third_value % 100;
-                //
-                //     char forth_value[256];
-                //     sprintf(forth_value, "%d", values[3]);
-                //
-                //     time_t rawtime;
-                //     time(&rawtime);
-                //     struct tm *info = localtime(&rawtime);
-                //     printf("------------\n");
-                //     printf("Latest event:\n");
-                //     printf("interval (%d)\n", values[0]);
-                //     printf("Temperature is: %d.%d\n", minutes, seconds);
-                //     printf("Light level is: %d\n", values[1]);
-                //     printf("Timestamp is: %s %s\n",forth_value, asctime(info));
-                // }
+                if (write(network_socket, &buffer, sizeof(buffer)) < 0) { 
+                    perror(0);
+                    exit(1);
+                }
+                flag = 1;
+                continue;
             }
 
-            if (n_read >= 7) { 
-                write(network_socket, &buffer, sizeof(buffer));
+            if (write(network_socket, &buffer, sizeof(buffer)) < 0) { 
+                perror(0);
+                exit(1);
             }
 
+            flag = 2;
+            continue;
         }
 
         if (FD_ISSET(network_socket, &mask)){ 
-            read(network_socket, &server_response, sizeof(server_response));
-            if (strlen(server_response) > 0){ 
+            int m_read;
+
+            if ((m_read = read(network_socket, &server_response, sizeof(server_response))) < 0) { 
+                perror(0);
+                exit(1);
+            }
+
+
+            if (!strncmp(server_response,"try again",strlen("try again"))) {
+                server_response[10] = '\0';
+
+                if (server_response[10] == '\n') {
+                    server_response[10] = '\0';
+                }
+
                 if (DEBUG){
-                    printf("read '%s'\n", server_response);
+                    printf("[DEBUG] read %s\n", server_response);
+                }
+
+                memset(server_response, 0, sizeof(server_response));
+                continue;
+            }
+
+            if (flag == 1) { 
+
+                server_response[22] = '\0';
+
+                if (server_response[22] == ' ') {
+                    server_response[22] = '\0';
+                }
+
+                if (DEBUG){
+                    printf("[DEBUG] read %s\n", server_response);
                 }
 
                 char *token = strtok(server_response, " ");
@@ -241,18 +405,31 @@ int main(int argc, char **argv) {
                 char forth_value[256];
                 sprintf(forth_value, "%d", values[3]);
 
-                time_t rawtime;
-                time(&rawtime);
+                time_t rawtime = atoi(forth_value);
                 struct tm *info = localtime(&rawtime);
                 printf("------------\n");
                 printf("Latest event:\n");
                 printf("interval (%d)\n", values[0]);
                 printf("Temperature is: %d.%d\n", minutes, seconds);
                 printf("Light level is: %d\n", values[1]);
-                printf("Timestamp is: %s %s\n",forth_value, asctime(info));
+                printf("Timestamp is: %s\n", asctime(info));
+                memset(server_response, 0, sizeof(server_response));
+                continue;
             }
-            printf("%s\n", server_response);            
-            // recv(network_socket, &server_response, sizeof(server_response), 0);
+
+            if (flag ==  2) { 
+
+                removeSubstring(server_response, "invalid code");
+
+                server_response[m_read] = '\0';
+
+                if (DEBUG){
+                    printf("[DEBUG] read %s\n", server_response);
+                }
+                printf("%s\n", server_response);
+                memset(server_response, 0, sizeof(server_response));
+                continue;
+            }
         }
 
 
